@@ -2,7 +2,7 @@ import { ArrowButton } from 'src/ui/arrow-button';
 import { Button } from 'src/ui/button';
 
 import styles from './ArticleParamsForm.module.scss';
-import React, { FormEvent, useEffect, useRef, useState } from 'react';
+import { FormEvent, useRef, useState } from 'react';
 import clsx from 'clsx';
 import { Text } from 'src/ui/text';
 import { Select } from 'src/ui/select';
@@ -10,6 +10,7 @@ import {
 	ArticleStateType,
 	backgroundColors,
 	contentWidthArr,
+	defaultArticleState,
 	fontColors,
 	fontFamilyOptions,
 	fontSizeOptions,
@@ -17,47 +18,52 @@ import {
 } from 'src/constants/articleProps';
 import { RadioGroup } from 'src/ui/radio-group';
 import { Separator } from 'src/ui/separator';
+import { useClose } from './hook/useClose';
 
 type ArticleParamsFormProps = {
-	formState: ArticleStateType;
-	onFontFamilySelect: (select: OptionType) => void;
-	onFontSizeSelect: (select: OptionType) => void;
-	onFontColorSelect: (select: OptionType) => void;
-	onBackgroundColorSelect: (select: OptionType) => void;
-	onContentWidthSelect: (select: OptionType) => void;
-	onSubmit: (event: FormEvent) => void;
-	onReset: () => void;
+	updateParams: (value: ArticleStateType) => void;
 };
 
-export const ArticleParamsForm = ({
-	formState,
-	onFontFamilySelect,
-	onFontSizeSelect,
-	onFontColorSelect,
-	onBackgroundColorSelect,
-	onContentWidthSelect,
-	onSubmit,
-	onReset,
-}: ArticleParamsFormProps) => {
+export const ArticleParamsForm = ({ updateParams }: ArticleParamsFormProps) => {
 	const [isOpen, setOpen] = useState(false);
 	const formRef = useRef<HTMLFormElement | null>(null);
+	const [formState, setFormState] =
+		useState<ArticleStateType>(defaultArticleState);
 
-	useEffect(() => {
-		const closeOnOutside = (event: MouseEvent) => {
-			if (formRef.current && !formRef.current.contains(event.target as Node)) {
-				setOpen(false);
-			}
-		};
+	useClose({ ref: formRef, toggleOpen: setOpen });
 
-		document.addEventListener('mousedown', closeOnOutside);
+	const handleForm = (key: keyof ArticleStateType, select: OptionType) => {
+		setFormState((prev) => ({ ...prev, [key]: select }));
+	};
 
-		return () => {
-			document.removeEventListener('mousedown', closeOnOutside);
-		};
-	}, []);
+	const hundleSubmit = (event: FormEvent) => {
+		event.preventDefault();
+		updateParams(formState);
+	};
+
+	const hundleReset = () => {
+		updateParams(defaultArticleState);
+		setFormState(defaultArticleState);
+	};
 
 	const handleFormOpen = () => {
 		setOpen(!isOpen);
+	};
+
+	const onFontFamilySelect = (value: OptionType) => {
+		handleForm('fontFamilyOption', value);
+	};
+	const onFontSizeSelect = (value: OptionType) => {
+		handleForm('fontSizeOption', value);
+	};
+	const onFontColorSelect = (value: OptionType) => {
+		handleForm('fontColor', value);
+	};
+	const onBackgroundColorSelect = (value: OptionType) => {
+		handleForm('backgroundColor', value);
+	};
+	const onContentWidthSelect = (value: OptionType) => {
+		handleForm('contentWidth', value);
 	};
 
 	return (
@@ -65,7 +71,7 @@ export const ArticleParamsForm = ({
 			<ArrowButton isOpen={isOpen} onClick={handleFormOpen} />
 			<aside
 				className={clsx(styles.container, { [styles.container_open]: isOpen })}>
-				<form ref={formRef} className={styles.form} onSubmit={onSubmit}>
+				<form ref={formRef} className={styles.form} onSubmit={hundleSubmit}>
 					<Text size={31} uppercase={true} weight={800} as={'h2'}>
 						Задайте параметры
 					</Text>
@@ -106,7 +112,7 @@ export const ArticleParamsForm = ({
 							title='Сбросить'
 							htmlType='reset'
 							type='clear'
-							onClick={onReset}
+							onClick={hundleReset}
 						/>
 						<Button title='Применить' htmlType='submit' type='apply' />
 					</div>
